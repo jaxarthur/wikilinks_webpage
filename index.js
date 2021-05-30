@@ -1,30 +1,3 @@
-const States = {
-    entry: "entry",
-    waiting: "waiting",
-    results: "results",
-    error: "error"
-};
-
-let state = States.entry;
-
-function updateDisplay() {
-    // Set state to display
-    let hidden = Object.keys(States)
-    hidden.splice(hidden.indexOf(state), 1)
-    for (hide of hidden) {
-        document.getElementById(hide).hidden = true;
-    }
-    document.getElementById(state).hidden = false;
-
-    // Clean up some values
-    document.getElementById("entry_error").hidden = true;
-
-    // Make main visible
-    document.getElementById("main").hidden = false
-}
-
-updateDisplay()
-
 function submitEvent() {
     let fromUrl = document.getElementById("from").value
     let toUrl = document.getElementById("to").value
@@ -33,17 +6,19 @@ function submitEvent() {
     let to = stripURL(toUrl)
 
     if (from == null) {
-        setEntryError("The starting url is invalid.")
+        setError("The starting url is invalid.")
         return
     }
 
     if (to == null) {
-        setEntryError("The destination url is invalid.")
+        setError("The destination url is invalid.")
         return
     }
 
+    setError("Request sent, it may take a while to get a response.")
+
     fetch("http://127.0.0.1:5500/api?from=" + from + "&to=" + to).then((response) => {
-            response.json().then((json) => console.log(json))
+            response.json().then((json) => handleResult(json))
         }).catch((reason) => {
             console.log(reason)
         }
@@ -57,7 +32,48 @@ function stripURL(url) {
     return result
 }
 
-function setEntryError(errorMessage) {
-    document.getElementById("entry_error").innerText = errorMessage;
-    document.getElementById("entry_error").hidden = false;
+function toUrl(partialUrl) {
+    return "https://en.wikipedia.org/wiki/" + partialUrl
+}
+
+function clearError() {
+    document.getElementById("error").hidden = true;
+}
+
+function setError(errorMessage) {
+    document.getElementById("error").innerText = errorMessage;
+    document.getElementById("error").hidden = false;
+}
+
+function clearPath() {
+    let parent = document.getElementById("path")
+    while (parent.lastChild) {
+        parent.removeChild(parent.lastChild)
+    }
+    document.getElementById("result").hidden = true;
+}
+
+function setPath(path) {
+    clearPath()
+    let parent = document.getElementById("path")
+    for (partialUrl of path) {
+        let node = document.createElement("li")
+        let link = document.createElement("a")
+        link.href = toUrl(partialUrl)
+        link.target = "_blank"
+        link.innerText = partialUrl
+        node.appendChild(link)
+        parent.appendChild(node)
+    }
+    document.getElementById("result").hidden = false;
+}
+
+function handleResult(json) {
+    if (json.path != null) {
+        clearError()
+        setPath(json.path)
+    } else if (json.error != null) {
+        clearPath()
+        setError(json.error)
+    }
 }
