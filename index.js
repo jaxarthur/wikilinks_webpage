@@ -15,7 +15,7 @@ function submitEvent() {
         return
     }
 
-    setError("Request sent, it may take a while to get a response.")
+    setError("Request sent, it may take a while to get a response.  ")
 
     fetch("http://127.0.0.1:5500/api?from=" + from + "&to=" + to).then((response) => {
             response.json().then((json) => handleResult(json))
